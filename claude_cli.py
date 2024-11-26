@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.status import Status
 from pathlib import Path
 import stat
 
@@ -45,6 +46,11 @@ def setup_client():
     
     return anthropic.Anthropic(api_key=api_key)
 
+def show_waiting_animation():
+    """Affiche une animation de points pendant l'attente"""
+    with console.status("[dim]...[/dim]", spinner="dots"):
+        return True
+
 def get_multiline_input():
     """Gère la saisie multi-ligne avec support de commandes spéciales"""
     console.print("\n[green]Vous :[/green]")
@@ -56,15 +62,11 @@ def get_multiline_input():
                 return None
             if line.strip() == "///":
                 text = '\n\n'.join(lines)
-                if text.strip():
-                    console.print("\n[dim]--- Message soumis, en attente de la réponse de Claude... ---[/dim]")
-                return text
+                return text if text.strip() else None
             lines.append(line)
         except EOFError:
             text = '\n\n'.join(lines)
-            if text.strip():
-                console.print("\n[dim]--- Message soumis, en attente de la réponse de Claude... ---[/dim]")
-            return text
+            return text if text.strip() else None
         except KeyboardInterrupt:
             return None
 
@@ -103,29 +105,37 @@ def chat_with_claude(model, max_tokens, system):
                 console.print("\n[green]Au revoir ![/green]")
                 break
             
-            if not user_input.strip():
-                continue
-            
             try:
-                # Send message to Claude
-                response = client.messages.create(
+                # Send message to Claude with streaming
+                console.print("\n[blue]Claude :[/blue]")
+                with console.capture() as capture:
+                    console.print("  ", end="")
+                
+                full_response = ""
+                stream = client.messages.create(
                     model=model,
                     max_tokens=max_tokens,
                     messages=[
                         *messages,
                         {"role": "user", "content": user_input}
-                    ]
+                    ],
+                    stream=True
                 )
                 
-                # Print Claude's response
-                console.print("\n[blue]Claude:[/blue]")
-                console.print(format_response(response.content[0].text))
+                # Print response in real-time
+                for chunk in stream:
+                    if chunk.type == 'content_block_delta':
+                        text = chunk.delta.text
+                        full_response += text
+                        console.print(text, end="", highlight=False)
                 
                 # Add the exchange to messages history
                 messages.extend([
                     {"role": "user", "content": user_input},
-                    {"role": "assistant", "content": response.content[0].text}
+                    {"role": "assistant", "content": full_response}
                 ])
+                
+                console.print()  # New line after response
                 
             except anthropic.APIError as e:
                 console.print(f"\n[red]Erreur API:[/red] {str(e)}")
