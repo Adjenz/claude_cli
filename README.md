@@ -42,7 +42,8 @@ La clé sera stockée de manière sécurisée dans un fichier .env.
 - Les messages que vous écrivez apparaissent après "Vous :" en vert
 - Les réponses de Claude apparaissent après "Claude :" en bleu
 - Le texte est automatiquement indenté pour une meilleure lisibilité
-- Les réponses sont formatées en Markdown pour une meilleure présentation
+- Les réponses sont affichées en temps réel, caractère par caractère
+- Le formatage Markdown est appliqué pour une meilleure présentation
 
 ## Commandes disponibles
 
@@ -55,6 +56,7 @@ La clé sera stockée de manière sécurisée dans un fichier .env.
 
 - Interface en ligne de commande moderne et colorée
 - Support des messages sur plusieurs lignes avec double espacement
+- Affichage en streaming des réponses de Claude
 - Formatage Markdown des réponses
 - Stockage sécurisé de la clé API
 - Historique de la conversation maintenu pendant la session
